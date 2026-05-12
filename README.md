@@ -1,77 +1,121 @@
-# Poll Frontend (React + Vite)
+# poll-frontend — واجهة React + Vite لاستطلاعات الرأي
 
-A small React + Vite frontend for creating, voting and viewing poll results. Uses `react`, `react-router-dom`, `axios`, and `antd`.
+واجهة بسيطة مبنية بـ React وVite لميزة إنشاء استطلاعات، التصويت، وعرض النتائج. تتواصل الواجهة مع API عبر `axios` وتستخدم مكونات من `antd` لواجهة المستخدم.
 
-## Prerequisites
+<!--
+title: 'poll-frontend — React + Vite frontend for Serverless Polls'
+description: 'واجهة أمامية بسيطة لإدارة الاستطلاعات: إنشاء، تصويت، عرض نتائج.'
+layout: Doc
+framework: v4
+platform: frontend
+language: arabic
+priority: 1
+authorName: 'Mazen'
+-->
 
-- Node.js 18+ (or a recent LTS)
-- npm or yarn
+## مميزات المشروع
 
-## Install
+- إنشاء استطلاع جديد من الواجهة
+- الانتقال إلى صفحة التصويت وإرسال الأصوات
+- عرض النتائج (نسب مئوية وأعداد الأصوات)
+- توليد رابط الاستطلاع (يعتمد على API لتوليد QR أو الرابط)
 
-Install dependencies:
+## المتغيرات البيئية (مهم)
+
+الواجهة تقرأ عنوان الـ API من متغير بيئة يبدأ بـ `VITE_` (مطلوب في وقت التشغيل / البناء):
+
+- `VITE_API_URL` — عنوان قاعدة الـ API (مثال: `https://api.example.com`)
+
+ملف مثال موجود كـ [`.env.example`](.env.example). انسخ المحتوى إلى `.env.local` أو `.env` ثم عدّل القيمة قبل التشغيل أو النشر.
 
 ```
-npm install
+# نسخ على PowerShell (Windows)
+Copy-Item .env.example .env
+
+# نسخ على macOS / Linux
+cp .env.example .env
 ```
 
-## Environment
+> ملاحظة: متغيرات Vite يجب أن تبدأ بـ `VITE_` لكي تكون متاحة عبر `import.meta.env`.
 
-This project can read the API base URL from an environment variable. An example env file is provided in `.env.example`.
+## نقاط النهاية (الـ API)
 
-By default the API base is hardcoded in `src/api/api.js`. To use an environment variable instead, update `src/api/api.js` like this:
+الواجهة تستخدم مسارات الـ API التالية كما في `src/api/api.js`:
+
+- `POST /poll` — إنشاء استطلاع
+- `GET /poll/{id}` — جلب تفاصيل استطلاع
+- `POST /poll/{id}/vote` — إرسال تصويت
+- `GET /poll/{id}/results` — جلب نتائج الاستطلاع
+- `GET /poll/{id}/link` — جلب رابط/بيانات QR للاستطلاع
+
+إذا رغبت في تغيير عنوان الـ API من ملف المصدر إلى متغير بيئة، عدّل `src/api/api.js` إلى:
 
 ```
 const API = import.meta.env.VITE_API_URL || "https://2u8da14pbk.execute-api.us-east-1.amazonaws.com";
 ```
 
-Create a local env file `./.env.local` (or `.env`) and set:
+وهذا يسمح لتبديل البيئات (dev / staging / production) بسهولة.
 
+## التشغيل محليًا
+
+1. تثبيت الحزم:
+
+```bash
+npm install
 ```
-VITE_API_URL=https://your-api.example.com
-```
 
-Vite exposes variables starting with `VITE_` via `import.meta.env`.
+2. تشغيل بيئة التطوير:
 
-## Scripts
-
-- `npm run dev` — Start dev server with HMR
-- `npm run build` — Build production bundle
-- `npm run preview` — Preview production build locally
-- `npm run lint` — Run ESLint
-
-## Run (development)
-
-```
+```bash
 npm run dev
 ```
 
-Open http://localhost:5173 (or the address shown by Vite).
+3. فتح المتصفح على العنوان الذي يظهر في الطرفية (افتراضيًا `http://localhost:5173`).
 
-## Build
+## البناء والنشر
 
-```
+```bash
 npm run build
 npm run preview
 ```
 
-## Project structure (important files)
+استخدم نتاج `dist/` لنشر الواجهة على أي مزود استضافة ثابت (Netlify, Vercel, S3 + CloudFront، ...).
 
-- `src/main.jsx` — app entry
-- `src/App.jsx` — main app component
-- `src/routes/AppRoutes.jsx` — routing
-- `src/pages/` — page components (`CreatePoll`, `VotePoll`, `Results`)
-- `src/api/api.js` — API helpers
-- `src/components/` — header/footer and UI pieces
+## أمثلة سريعة (اختبار تكامل مع الـ API)
 
-## Notes
+يمكنك تجربة نقاط الـ API عبر `curl` (عند توفر عنوان API):
 
-- The project currently uses a public API base URL in `src/api/api.js`. Replace it with your own backend or configure `VITE_API_URL` as shown above.
-- If you add secrets, never commit them. Use a local `.env.local` or environment variables in your deployment platform.
+إنشاء استطلاع (مثال):
 
-## Contributing
+```bash
+curl -X POST $VITE_API_URL/poll \
+	-H "Content-Type: application/json" \
+	-d '{"question":"ما هو أفضل إطار عمل؟","options":["React","Vue","Svelte"]}'
+```
 
-Feel free to open issues or submit PRs. Run `npm run lint` and ensure formatting and lint rules pass before submitting.
+التصويت لخيار:
+
+```bash
+curl -X POST $VITE_API_URL/poll/<pollId>/vote \
+	-H "Content-Type: application/json" \
+	-d '{"optionId":"<optionId>"}'
+```
+
+جلب النتائج:
+
+```bash
+curl $VITE_API_URL/poll/<pollId>/results
+```
+
+## ملاحظة أمان
+
+- لا تقم بارتكاب أي مفاتيح أو متغيرات حساسة في Git.
+- استخدم متغيرات بيئة على منصة النشر بدلاً من ملفات مضمنة في المستودع.
+
+## بنية المشروع (مهم)
+
+- `src/api/api.js` — helpers للتواصل مع الـ API
+- `src/pages/` — شاشات `CreatePoll`, `VotePoll`, `Results`
+- `src/components/` — مكونات عامة (Header/Footer)
 
 ---
-Generated README based on the repository contents and `src/api/api.js`.
